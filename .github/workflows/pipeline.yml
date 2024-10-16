@@ -2,6 +2,8 @@ name: pipeline
 
 on:
   push:
+    branches:
+      -main
   
 jobs:
   analyze:
@@ -90,28 +92,13 @@ jobs:
         path: ~/.m2
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
-        
-    - name: Build and analyze
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_IMPACTA }}
-      run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.qualitygate.wait=true -Dsonar.projectKey=devopsfiap_devopsimpacta
-
-
-  build:
-    runs-on: ubuntu-latest
-    needs: code-analisys
-    steps:
-    - uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
     
     - name: Package
       run: mvn package  
    
   deploy-STG:
     runs-on: ubuntu-latest
-    needs: build
+    needs: unit-test
     environment:
       name: stg
     
@@ -151,7 +138,7 @@ jobs:
     if: github.ref == 'refs/heads/release'
     environment:
       name: pre
-    needs: build
+    needs: testeIntegrados
     steps:
       - name: Deploy 
         shell: bash
@@ -188,7 +175,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     environment:
       name: prod
-    needs: build
+    needs: testeFuncionais
     steps:
       - name: Deploy 
         shell: bash
